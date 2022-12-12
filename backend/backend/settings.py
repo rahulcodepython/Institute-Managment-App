@@ -1,5 +1,8 @@
 from pathlib import Path
 import environ
+from datetime import timedelta
+import os
+
 env = environ.Env()
 environ.Env.read_env()
 
@@ -24,11 +27,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Installed Apps
+    'user',
+    'base',
+
+    # Used Dependencies
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
 ]
+
+# Change the default user model
+AUTH_USER_MODEL = 'user.CustomUser'
+
+# Change the default Rest_Framework classes
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # Middleware for cors headers
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -96,6 +119,28 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Set the path for media files
+MEDIA_URL = 'media/'
+
+# Set the directory path for media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Change the default JWT Authentication settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'UPDATE_LAST_LOGIN': True,
+}
+
+# Allow url to access the apis
+# CORS_ALLOWED_ORIGINS = [
+    
+# ]
+
+# Allows any url to access the apis
+CORS_ALLOW_ALL_ORIGINS = True

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Spinner from '../components/spinner'
+import Sidebar from '../components/sidebar'
 
 export default function Home() {
 
@@ -25,9 +26,10 @@ export default function Home() {
         <>
             {
                 loading ? <Spinner /> : <>
-                    <div className='text-center text-red-600'>
+                    {/* <div className='text-center text-red-600'>
                         Home Page
-                    </div>
+                    </div> */}
+                    <Sidebar />
                 </>
             }
         </>
