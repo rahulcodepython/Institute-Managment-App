@@ -18,9 +18,9 @@ export default function ProfileButton() {
         fetch(apiURL, options)
             .then(response => response.json())
             .then(response => {
-                setUser(response[0])
-                sessionStorage.setItem("userId", response[0].userId)
-                sessionStorage.setItem("position", response[0].position)
+                setUser(response)
+                sessionStorage.setItem("userId", response.email.split('@')[0])
+                sessionStorage.setItem("position", response.position)
             })
             .catch(err => console.error(err));
     }, [])

@@ -8,7 +8,9 @@ from user.views import (
     ShowTeachersView, 
     ShowStudentsView, 
     RegisterUserToCustomUserModelView,
-    ShowProfilePrivateView
+    ShowProfilePrivateView,
+    WaitForApprovalRegisterUserToCustomUserModelView,
+    CheckWaitForApprovalRegisterUserToCustomUserModelView
 )
 
 urlpatterns = [
@@ -19,11 +21,13 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # Api routes
+    path('api/waituser/', WaitForApprovalRegisterUserToCustomUserModelView.as_view()),
+    path('api/checkwaituser/<str:id>', CheckWaitForApprovalRegisterUserToCustomUserModelView.as_view()),
     path('api/registeruser/', RegisterUserToCustomUserModelView.as_view()),
     path('api/profilebutton/', ProfileButtonView.as_view()),
     path('api/showteachers/', ShowTeachersView.as_view()),
     path('api/showstudents/', ShowStudentsView.as_view()),
-    path('api/myprofile/', ShowProfilePrivateView.as_view()),
+    path('api/myprofile/<str:id>/', ShowProfilePrivateView.as_view()),
 ]
 
 if settings.DEBUG:

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from user.models import Teacher, Student, CustomUser, Staff
+from user.models import Teacher, Student, CustomUser, Staff, WaitingApproval
+from django.contrib.auth.hashers import make_password
 
 # Profile Button Serializer for Teacher, Student, Staff
 class ProfileButtonTeacherSerializer(serializers.ModelSerializer):
@@ -7,19 +8,18 @@ class ProfileButtonTeacherSerializer(serializers.ModelSerializer):
     position = serializers.SerializerMethodField('get_position')
     email = serializers.StringRelatedField(source='teacherUser.email')
     name = serializers.SerializerMethodField('get_name')
-    userId = serializers.SerializerMethodField('get_userId')
     image = serializers.SerializerMethodField('get_image')
 
     class Meta:
         model = Teacher
-        fields = ['userId', 'email', 'name', 'image', 'position']
+        fields = ['email', 'name', 'image', 'position']
 
     def get_position(self, obj):
         return CustomUser.objects.get(email=obj.teacherUser).position
+
     def get_name(self, obj):
         return Teacher.objects.get(teacherId=obj.teacherId).teacherName
-    def get_userId(self, obj):
-        return Teacher.objects.get(teacherId=obj.teacherId).teacherId
+
     def get_image(self, obj):
         return Teacher.objects.get(teacherId=obj.teacherId).teacherImage.url
 
@@ -28,19 +28,18 @@ class ProfileButtonStudentSerializer(serializers.ModelSerializer):
     position = serializers.SerializerMethodField('get_position') 
     email = serializers.StringRelatedField(source='studentUser.email')
     name = serializers.SerializerMethodField('get_name')
-    userId = serializers.SerializerMethodField('get_userId')
     image = serializers.SerializerMethodField('get_image')
 
     class Meta:
         model = Student
-        fields = ['userId', 'email', 'name', 'image', 'position']
+        fields = ['email', 'name', 'image', 'position']
 
     def get_position(self, obj):
         return CustomUser.objects.get(email=obj.studentUser).position
+
     def get_name(self, obj):
         return Student.objects.get(studentId=obj.studentId).studentName
-    def get_userId(self, obj):
-        return Student.objects.get(studentId=obj.studentId).studentId
+        
     def get_image(self, obj):
         return Student.objects.get(studentId=obj.studentId).studentImage.url
 
@@ -49,21 +48,20 @@ class ProfileButtonStaffSerializer(serializers.ModelSerializer):
     position = serializers.SerializerMethodField('get_position') 
     email = serializers.StringRelatedField(source='staffUser.email')
     name = serializers.SerializerMethodField('get_name')
-    userId = serializers.SerializerMethodField('get_userId')
     image = serializers.SerializerMethodField('get_image')
 
     class Meta:
         model = Staff
-        fields = ['userId', 'email', 'name', 'image', 'position']
+        fields = ['email', 'name', 'image', 'position']
 
     def get_position(self, obj):
         return CustomUser.objects.get(email=obj.staffUser).position
+
     def get_name(self, obj):
-        return Staff.objects.get(staffId=obj.staffId).staffName
-    def get_userId(self, obj):
-        return Staff.objects.get(staffId=obj.staffId).staffId
+        return Staff.objects.get(staffUser=obj.staffUser).staffName
+
     def get_image(self, obj):
-        return Staff.objects.get(staffId=obj.staffId).staffImage.url
+        return Staff.objects.get(staffUser=obj.staffUser).staffImage.url
 
 # Show Teachers data for Admin
 class ShowTeachersSerializer(serializers.ModelSerializer):
@@ -81,24 +79,33 @@ class ShowStudentsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        exclude = ['studentBio', 'studentRemarks', ]
+        exclude = ['studentBio', 'studentRemarks']
 
 # Register New User
 class RegisterUserToCustomUserModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'position']
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
     def save(self):
-        user = CustomUser(email=self.validated_data['email'])
+        user = CustomUser(email=self.validated_data['email'], position=self.validated_data['position'])
         password = self.validated_data['password']
         user.set_password(password)
+        user.name = self.validated_data['email'].split('@')[0]
         user.save()
+        
         return user
+
+# Register New User
+class WaitForApprovalRegisterUserToCustomUserModelSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = WaitingApproval
+        fields = ['email', 'password', 'position']
 
 # Show Profile for Teacher, Student, Staff private
 class ShowProfileTeacherPrivateSerializer(serializers.ModelSerializer):
@@ -107,7 +114,7 @@ class ShowProfileTeacherPrivateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        exclude = ['teacherId']
+        fields = '__all__'
 
 class ShowProfileStudentPrivateSerializer(serializers.ModelSerializer):
     
@@ -115,7 +122,7 @@ class ShowProfileStudentPrivateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Student
-        exclude = ['studentId']
+        fields = '__all__'
 
 class ShowProfileStaffPrivateSerializer(serializers.ModelSerializer):
 
@@ -123,4 +130,4 @@ class ShowProfileStaffPrivateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Staff
-        exclude = ['staffId']
+        fields = '__all__'

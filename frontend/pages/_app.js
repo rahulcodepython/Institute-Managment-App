@@ -8,7 +8,7 @@ function MyApp({ Component, pageProps }) {
 
     const router = useRouter()
 
-    const [cookies, setCookie] = useCookies(['refreshToken']);
+    const [cookies, setCookie] = useCookies(['refreshToken', 'authenticated', 'userid']);
 
     const [loading, setLoading] = useState(true)
 
@@ -40,19 +40,24 @@ function MyApp({ Component, pageProps }) {
     }
 
     const validateTokens = () => {
-        if (cookies.refreshToken) {
-            if (sessionStorage.getItem("accessToken")) {
-                if (sessionStorage.getItem("authenticated") != "true") {
-                    sessionStorage.setItem("authenticated", "true")
+        if (cookies.authenticated === 'pending') {
+            router.push("/waitinguser");
+        }
+        else {
+            if (cookies.refreshToken) {
+                if (sessionStorage.getItem("accessToken")) {
+                    if (sessionStorage.getItem("authenticated") != "true") {
+                        sessionStorage.setItem("authenticated", true)
+                    }
+                }
+                else {
+                    getAccessTokenFromRefreshToken();
                 }
             }
             else {
-                getAccessTokenFromRefreshToken();
+                sessionStorage.setItem("authenticated", false)
+                router.pathname == '/register' ? router.push('/register') : router.push('/login')
             }
-        }
-        else {
-            sessionStorage.setItem("authenticated", "false")
-            router.push("/login");
         }
     }
 

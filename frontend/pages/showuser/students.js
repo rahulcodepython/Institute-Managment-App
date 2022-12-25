@@ -4,6 +4,7 @@ import { BiEdit, BiTrash } from "react-icons/bi";
 import Spinner from '../../components/spinner';
 import Head from 'next/head';
 import { useRouter } from 'next/router'
+import Link from 'next/link';
 
 export default function Students() {
 
@@ -47,7 +48,7 @@ export default function Students() {
 
     const rows = students.map((student) => {
         return [
-            student.studentId,
+            student.studentUser.split('@')[0],
             student.studentImage,
             student.studentName,
             student.studentUser,
@@ -162,10 +163,16 @@ export default function Students() {
                                             </td>
                                             <th scope="row" className="flex items-center py-4 px-6 text-gray-900 whitespace-nowrap">
                                                 <img className="w-10 h-10 rounded-full" src={row[1]} alt="Jese image" />
-                                                <div className="pl-3">
+                                                <Link href={{
+                                                    pathname: `/profile/[userid]`,
+                                                    query: {
+                                                        userid: row[0],
+                                                        position: 'Student'
+                                                    }
+                                                }} className="pl-3">
                                                     <div className="text-base font-semibold">{row[2]}</div>
                                                     <div className="font-normal text-gray-500">{row[3]}</div>
-                                                </div>
+                                                </Link>
                                             </th>
                                             <td className="py-4 px-6">
                                                 {

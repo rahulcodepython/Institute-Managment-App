@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../layout/adminLayout'
 import Spinner from '../../components/spinner'
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 export default function ProfileCard() {
+
+    const router = useRouter();
+    const { userid, position } = router.query
 
     const [profile, setProfile] = useState([])
     const [loading, setLoading] = useState(true)
@@ -16,55 +20,55 @@ export default function ProfileCard() {
             }
         };
 
-        const apiURL = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/myprofile/`
+        const apiURL = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/myprofile/${userid}/`
 
         fetch(apiURL, options)
             .then(response => response.json())
             .then(response => {
                 setProfile(
-                    sessionStorage.getItem('position') === 'Staff' || sessionStorage.getItem('position') === 'Admin' ? [
-                        response[0].staffImage,
+                    position === 'Staff' || position === 'Admin' ? [
+                        response.staffImage,
                         [
-                            ['Joining Date', response[0].staffJoiningDate],
-                            ['Gender', response[0].staffGender],
-                            ['Mobile No', response[0].staffMobileNumber],
-                            ['Pay Scale', response[0].staffPayScale],
+                            ['Joining Date', response.staffJoiningDate],
+                            ['Gender', response.staffGender],
+                            ['Mobile No', response.staffMobileNumber],
+                            ['Pay Scale', response.staffPayScale],
                         ],
-                        response[0].staffName,
-                        response[0].staffUser,
-                        ['POSITION', response[0].staffDepartment],
-                        response[0].staffBio,
+                        response.staffName,
+                        response.staffUser,
+                        ['POSITION', response.staffDepartment],
+                        response.staffBio,
                     ]
                         :
-                        sessionStorage.getItem('position') === 'Student' ? [
-                            response[0].studentImage,
+                        position === 'Student' || position === 'Admin' ? [
+                            response.studentImage,
                             [
-                                ['Joining Date', response[0].studentJoiningDate],
-                                ['Gender', response[0].studentGender],
-                                ['Mobile No', response[0].studentMobileNumber],
-                                ['Class', response[0].studentClass],
-                                ['Marks', response[0].studentMarks],
-                                ['Ratings', response[0].studentRating],
+                                ['Joining Date', response.studentJoiningDate],
+                                ['Gender', response.studentGender],
+                                ['Mobile No', response.studentMobileNumber],
+                                ['Class', response.studentClass],
+                                ['Marks', response.studentMarks],
+                                ['Ratings', response.studentRating],
                             ],
-                            response[0].studentName,
-                            response[0].studentUser,
-                            ['SUBJECT', response[0].studentSubject],
-                            response[0].studentBio,
-                            response[0].studentRemarks,
+                            response.studentName,
+                            response.studentUser,
+                            ['SUBJECT', response.studentSubject],
+                            response.studentBio,
+                            response.studentRemarks,
                         ]
                             :
-                            sessionStorage.getItem('position') === 'Teacher' ? [
-                                response[0].teacherImage,
+                            position === 'Teacher' || position === 'Admin' ? [
+                                response.teacherImage,
                                 [
-                                    ['Joining Date', response[0].teacherJoiningDate],
-                                    ['Gender', response[0].teacherGender],
-                                    ['Mobile No', response[0].teacherMobileNumber],
-                                    ['Pay Scale', response[0].teacherPayScale],
+                                    ['Joining Date', response.teacherJoiningDate],
+                                    ['Gender', response.teacherGender],
+                                    ['Mobile No', response.teacherMobileNumber],
+                                    ['Pay Scale', response.teacherPayScale],
                                 ],
-                                response[0].teacherName,
-                                response[0].teacherUser,
-                                ['SUBJECT', response[0].teacherSubject],
-                                response[0].teacherBio,
+                                response.teacherName,
+                                response.teacherUser,
+                                ['SUBJECT', response.teacherSubject],
+                                response.teacherBio,
                             ] : ''
                 )
                 setLoading(false)
@@ -107,7 +111,7 @@ export default function ProfileCard() {
                             <div className="px-6">
                                 <div className="flex flex-wrap justify-center">
                                     <div className="w-full px-4 flex justify-center">
-                                        <img alt="..." src={profile[0]} className="shadow-xl rounded-full h-40 w-40 align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px" />
+                                        <img alt="..." src={process.env.NEXT_PUBLIC_BACKEND_BASE_URL + profile[0]} className="shadow-xl rounded-full h-40 w-40 align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px" />
                                     </div>
                                     <div className="w-full px-4 text-center mt-20">
                                         <div className="flex justify-between items-center py-4 lg:pt-4 pt-8">

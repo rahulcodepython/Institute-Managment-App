@@ -1,5 +1,5 @@
 from django.contrib import admin
-from user.models import CustomUser, Teacher, Student, Staff
+from user.models import CustomUser, Teacher, Student, Staff, WaitingApproval
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
@@ -16,3 +16,8 @@ class TeacherAdmin(admin.ModelAdmin):
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     list_display = ['staffName', 'staffUser', 'staffDepartment']
+
+@admin.register(WaitingApproval)
+class WaitingApprovalAdmin(admin.ModelAdmin):
+    list_display = ['email', 'position']
+

@@ -18,7 +18,13 @@ export default function Sidebar({ toggleMenu }) {
         {
             name: 'Profile',
             icon: <BiIdCard />,
-            link: `/profile/${sessionStorage.getItem('userId')}`
+            link: {
+                pathname: `/profile/[userid]`,
+                query: {
+                    userid: sessionStorage.getItem('userId'),
+                    position: sessionStorage.getItem('position')
+                }
+            }
         },
         {
             name: 'Teachers',

@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework_simplejwt.tokens import RefreshToken
-from user.models import Teacher, Student, CustomUser, Staff
+from user.models import Teacher, Student, CustomUser, Staff, WaitingApproval
 from user.serializers import (
     RegisterUserToCustomUserModelSerializer, 
     ProfileButtonTeacherSerializer, 
@@ -10,9 +10,11 @@ from user.serializers import (
     ShowStudentsSerializer,
     ShowProfileTeacherPrivateSerializer,
     ShowProfileStaffPrivateSerializer,
-    ShowProfileStudentPrivateSerializer
+    ShowProfileStudentPrivateSerializer,
+    WaitForApprovalRegisterUserToCustomUserModelSerializer
 )
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.views import APIView, Response
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -23,27 +25,30 @@ def get_tokens_for_user(user):
     }
 
 # Show Profile button
-class ProfileButtonView(generics.ListAPIView):
+class ProfileButtonView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request, format=None):
         position = CustomUser.objects.get(email=self.request.user).position
-        if position == 'Teacher':
-            return Teacher.objects.filter(teacherUser=self.request.user)
-        elif position == 'Student':
-            return Student.objects.filter(studentUser=self.request.user)
-        elif position == 'Staff' or position == 'Admin':
-            return Staff.objects.filter(staffUser=self.request.user)
 
-    def get_serializer_class(self):
-        position = CustomUser.objects.get(email=self.request.user).position
         if position == 'Teacher':
-            return ProfileButtonTeacherSerializer
+            teacher = Teacher.objects.get(teacherUser=self.request.user)
+            serialized = ProfileButtonTeacherSerializer(teacher)
+
+            return Response(serialized.data)
+
         elif position == 'Student':
-            return ProfileButtonStudentSerializer
-        elif position == 'Staff' or position == 'Admin':
-            return ProfileButtonStaffSerializer
+            student = Student.objects.get(studentUser=self.request.user)
+            serialized = ProfileButtonStudentSerializer(student)
+
+            return Response(serialized.data)
+
+        elif position == 'Admin' or position == 'Staff':
+            staff = Staff.objects.get(staffUser=self.request.user)
+            serialized = ProfileButtonStaffSerializer(staff)
+
+            return Response(serialized.data)
 
 # Show Teachers for Admin
 class ShowTeachersView(generics.ListAPIView):
@@ -64,29 +69,47 @@ class RegisterUserToCustomUserModelView(generics.CreateAPIView):
     serializer_class = RegisterUserToCustomUserModelSerializer
     queryset = CustomUser
 
-# Show Profile
-class ShowProfilePrivateView(generics.ListAPIView):
+# Wait New User For Approval From Admin
+class WaitForApprovalRegisterUserToCustomUserModelView(generics.CreateAPIView):
+    serializer_class = WaitForApprovalRegisterUserToCustomUserModelSerializer
+    queryset = WaitingApproval
+
+# Check Waiting User is till not approved
+class CheckWaitForApprovalRegisterUserToCustomUserModelView(APIView):
     
+    def get(self, request, id, format=None): 
+        if WaitingApproval.objects.filter(name=id).exists():
+            return Response({"msg": "Not Approved"})
+        
+        elif CustomUser.objects.filter(name=id).exists():
+            return Response({"msg": "Approved"})
+
+        else:
+            return Response({"msg": "Rejected"})
+            
+# Show Profile
+class ShowProfilePrivateView(APIView):
+
     permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id, format=None):
+        requestUserPosition = CustomUser.objects.get(email=request.user.email).position
+        user = CustomUser.objects.get(name=id)
+        userposition = CustomUser.objects.get(name=id).position
 
-    def get_queryset(self):
-        position = CustomUser.objects.get(email=self.request.user).position
+        if requestUserPosition == 'Admin' and userposition == 'Teacher':
+            teacher = Teacher.objects.get(teacherUser=user)
+            serialized = ShowProfileTeacherPrivateSerializer(teacher)
 
-        if position == 'Teacher':
-            return Teacher.objects.filter(teacherUser=self.request.user)
-        elif position == 'Student':
-            return Student.objects.filter(studentUser=self.request.user)
-        elif position == 'Staff' or position == 'Admin':
-            return Staff.objects.filter(staffUser=self.request.user)
+        elif requestUserPosition == 'Admin' and userposition == 'Student':
+            student = Student.objects.get(studentUser=user)
+            serialized = ShowProfileStudentPrivateSerializer(student)
 
-    def get_serializer_class(self):
-        position = CustomUser.objects.get(email=self.request.user).position
-
-        if position == 'Teacher':
-            return ShowProfileTeacherPrivateSerializer
-        elif position == 'Student':
-            return ShowProfileStudentPrivateSerializer
-        elif position == 'Staff' or position == 'Admin':
-            return ShowProfileStaffPrivateSerializer
+        elif requestUserPosition == 'Admin' and userposition == 'Staff' or userposition == 'Admin':
+            staff = Staff.objects.get(staffUser=user)
+            serialized = ShowProfileStaffPrivateSerializer(staff)
+        
+        return Response(serialized.data)
+    
 
 

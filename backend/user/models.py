@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from base.models import Subject, Standard, Department
-import uuid
+from django.contrib.auth.hashers import make_password
 
 class CustomUserManager(BaseUserManager):
 
@@ -42,6 +42,7 @@ CUSTOMUSER_POSITION_CHOICES = (
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(db_index=True, unique=True, max_length=254)
+    name = models.CharField(max_length=255, default="")
     position = models.CharField(choices=CUSTOMUSER_POSITION_CHOICES, max_length=100, default="Staff")
     is_staff = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
@@ -63,10 +64,9 @@ GENDER_CHOICES = (
 
 class Teacher(models.Model):
 
-    teacherId = models.UUIDField(default = uuid.uuid4, unique=True)
+    teacherUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     teacherName = models.CharField(max_length=1000, default="Guest Teacher")
     teacherSubject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
-    teacherUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     teacherImage = models.ImageField(upload_to='teacherimage/', default="default.png")
     teacherJoiningDate = models.DateField(auto_now_add=True)
     teacherPayScale = models.IntegerField(default=0)
@@ -89,7 +89,6 @@ RATING_CHOICES = (
 class Student(models.Model):
 
     studentUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    studentId = models.UUIDField(default = uuid.uuid4, unique=True)
     studentName = models.CharField(max_length=1000, default="Guest Student")
     studentClass = models.ForeignKey(Standard, on_delete=models.SET_DEFAULT, default="undefined")
     studentSubject = models.ManyToManyField(Subject, blank=True)
@@ -109,7 +108,6 @@ class Student(models.Model):
 class Staff(models.Model):
 
     staffUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    staffId = models.UUIDField(default = uuid.uuid4, unique=True)
     staffName = models.CharField(max_length=1000, default="Guest Staff")
     staffDepartment = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     staffPayScale = models.IntegerField(default=0)
@@ -122,3 +120,15 @@ class Staff(models.Model):
     class Meta:
         verbose_name = 'Staff'
         verbose_name_plural = 'Staffs'
+
+class WaitingApproval(models.Model):
+
+    email = models.EmailField(unique=True, max_length=254)
+    name = models.EmailField(max_length=254)
+    password = models.CharField(max_length=255)
+    position = models.CharField(max_length=100)
+
+    def save(self, *args, **kwargs):
+        self.name = self.email.split('@')[0]
+        self.password = make_password(self.password)
+        return super().save(*args, **kwargs)
