@@ -100,6 +100,7 @@ class ShowProfilePrivateView(APIView):
         if requestUserPosition == 'Admin' and userposition == 'Teacher':
             teacher = Teacher.objects.get(teacherUser=user)
             serialized = ShowProfileTeacherPrivateSerializer(teacher)
+            print("teacher")
 
         elif requestUserPosition == 'Admin' and userposition == 'Student':
             student = Student.objects.get(studentUser=user)

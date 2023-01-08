@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { BiLogOut, BiCategory, BiIdCard, BiBarChart } from "react-icons/bi";
 import { CiSettings } from "react-icons/ci";
 import { BsFillPersonFill } from "react-icons/bs";
@@ -8,6 +8,9 @@ import { useCookies } from 'react-cookie';
 export default function Sidebar({ toggleMenu }) {
 
     const [cookies, setCookie, removeCookie] = useCookies(['refreshToken']);
+
+    const [userId, setUserId] = useState('')
+    const [position, setPosition] = useState('')
 
     const navLinks = [
         {
@@ -21,8 +24,8 @@ export default function Sidebar({ toggleMenu }) {
             link: {
                 pathname: `/profile/[userid]`,
                 query: {
-                    userid: sessionStorage.getItem('userId'),
-                    position: sessionStorage.getItem('position')
+                    userid: userId,
+                    position: position
                 }
             }
         },
@@ -35,6 +38,11 @@ export default function Sidebar({ toggleMenu }) {
             name: 'Students',
             icon: <BsFillPersonFill />,
             link: "/showuser/students"
+        },
+        {
+            name: 'Waiting User',
+            icon: <BsFillPersonFill />,
+            link: "/showuser/waitinguser"
         },
         {
             name: 'Stock',
@@ -56,6 +64,11 @@ export default function Sidebar({ toggleMenu }) {
         sessionStorage.setItem("authenticated", false)
     }
 
+    useEffect(() => {
+        setUserId(sessionStorage.getItem('userId'))
+        setPosition(sessionStorage.getItem('position'))
+    }, [])
+
     return (
         <>
             <div className={`sidebar ${toggleMenu}`}>
@@ -66,7 +79,7 @@ export default function Sidebar({ toggleMenu }) {
                 <ul className="nav-links px-8">
                     {
                         navLinks.map((link) => {
-                            return sessionStorage.getItem("position") === 'Admin' ? <li key={link.name} className="hover:rounded-md">
+                            return position === 'Admin' ? <li key={link.name} className="hover:rounded-md">
                                 <Link href={link.link} className="cursor-pointer">
                                     <span className='mr-5 -ml-4 text-white text-3xl'>
                                         {link.icon}

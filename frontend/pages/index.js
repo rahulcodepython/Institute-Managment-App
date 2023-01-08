@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import Spinner from '../components/spinner'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 
 export default function Home() {
+
+    const router = useRouter();
 
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        setTimeout(() => {
-            setLoading(false);
-        }, 2000);
+        sessionStorage.getItem('authenticated') === 'true' ? setLoading(false) : router.push('/login');
     }, [])
 
     return (
@@ -20,7 +21,7 @@ export default function Home() {
             {
                 loading ? <Spinner /> : <>
                     <div className='text-center text-red-600'>
-                        Home Page
+                        Home Page of MyInstitute
                     </div>
                 </>
             }

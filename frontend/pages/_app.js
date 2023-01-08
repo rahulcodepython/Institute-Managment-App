@@ -2,15 +2,12 @@ import '../styles/globals.css'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
 import { useCookies } from 'react-cookie'
-import Spinner from '../components/spinner';
 
 function MyApp({ Component, pageProps }) {
 
     const router = useRouter()
 
-    const [cookies, setCookie] = useCookies(['refreshToken', 'authenticated', 'userid']);
-
-    const [loading, setLoading] = useState(true)
+    const [cookies, setCookie] = useCookies(['authenticated', 'refreshToken']);
 
     const getAccessTokenFromRefreshToken = () => {
         const options = {
@@ -26,47 +23,41 @@ function MyApp({ Component, pageProps }) {
         fetch(apiURL, options)
             .then(response => response.json())
             .then(response => {
-                if (response.detail) {
-                    sessionStorage.setItem("authenticated", "false")
-                    router.push("/login")
-                }
-                else {
-                    sessionStorage.setItem("accessToken", response.access)
-                    sessionStorage.setItem("authenticated", "true")
-                    setCookie("refreshToken", response.refresh)
-                }
+                sessionStorage.setItem("accessToken", response.access)
+                sessionStorage.setItem("authenticated", "true")
+                setCookie("refreshToken", response.refresh)
             })
             .catch(err => console.error(err));
     }
 
-    const validateTokens = () => {
-        if (cookies.authenticated === 'pending') {
-            router.push("/waitinguser");
-        }
-        else {
+    const authenticateUser = () => {
+        if (cookies.authenticated === 'true') {
             if (cookies.refreshToken) {
-                if (sessionStorage.getItem("accessToken")) {
-                    if (sessionStorage.getItem("authenticated") != "true") {
-                        sessionStorage.setItem("authenticated", true)
-                    }
-                }
-                else {
-                    getAccessTokenFromRefreshToken();
-                }
+                getAccessTokenFromRefreshToken();
+                sessionStorage.setItem('authenticated', true)
+                router.push(router.pathname);
             }
             else {
-                sessionStorage.setItem("authenticated", false)
-                router.pathname == '/register' ? router.push('/register') : router.push('/login')
+                setCookie('authenticated', false)
+                sessionStorage.setItem('authenticated', false)
+                router.push("/login");
             }
+        }
+        else if (cookies.authenticated === 'pending') {
+            sessionStorage.setItem('authenticated', 'pending')
+            router.push("/unapproveduser");
+        }
+        else {
+            sessionStorage.setItem('authenticated', false)
+            router.pathname === '/register' ? router.push('/register') : null
         }
     }
 
     useEffect(() => {
-        validateTokens();
-        setLoading(false);
+        authenticateUser();
     }, [])
 
-    return loading ? <Spinner /> : <Component {...pageProps} />
+    return <Component {...pageProps} />
 }
 
 export default MyApp;

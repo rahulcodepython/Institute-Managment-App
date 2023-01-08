@@ -11,7 +11,7 @@ export default function Register() {
 
     const [loading, setLoading] = useState(false)
 
-    const [cookies, setCookie] = useCookies(['email', 'authenticated']);
+    const [cookies, setCookie] = useCookies(['userid', 'authenticated']);
 
     const registerNewUser = (value) => {
 
@@ -24,15 +24,11 @@ export default function Register() {
         };
 
         fetch(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/waituser/`, options)
-            .then(response => {
-                if (response.status === 201) {
-                    router.push('/waitinguser')
-                    setCookie("userid", value.email.split('@')[0], { path: '/' })
-                    setCookie("authenticated", 'pending', { path: '/' })
-                }
-                else {
-                    router.push('/register')
-                }
+            .then(() => {
+                setCookie("userid", value.email.split('@')[0], { path: '/', maxAge: `${60 * 60 * 24}` })
+                setCookie("authenticated", 'pending', { path: '/', maxAge: `${60 * 60 * 24}` })
+                sessionStorage.setItem('authenticated', 'pending')
+                router.push('/unapproveduser')
             })
             .catch(err => console.error(err));
     }
@@ -45,9 +41,7 @@ export default function Register() {
         },
 
         onSubmit: (value) => {
-            setLoading(true)
             registerNewUser(value);
-            setLoading(false)
         }
     })
 
@@ -59,7 +53,7 @@ export default function Register() {
     ]
 
     useEffect(() => {
-        sessionStorage.getItem("authenticated") === "true" ? router.back() : null;
+        sessionStorage.getItem("authenticated") === "false" || !sessionStorage.getItem('authenticated') ? setLoading(false) : router.push('/')
     }, [])
 
     return (

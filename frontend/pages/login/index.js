@@ -9,9 +9,9 @@ export default function Login() {
 
     const router = useRouter();
 
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
 
-    const [cookies, setCookie] = useCookies(['refreshToken']);
+    const [cookies, setCookie] = useCookies(['refreshToken', 'authenticated']);
 
     const fetchAuthToken = (value) => {
 
@@ -26,15 +26,11 @@ export default function Login() {
         fetch(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/token/`, options)
             .then(response => response.json())
             .then(response => {
-                if (response.detail) {
-                    router.push('/login')
-                }
-                else {
-                    setCookie("refreshToken", response.refresh, { path: '/', maxAge: `${60 * 60 * 24}` })
-                    sessionStorage.setItem("accessToken", response.access)
-                    sessionStorage.setItem("authenticated", "true");
-                    router.push('/dashboard');
-                }
+                setCookie("refreshToken", response.refresh, { path: '/', maxAge: `${60 * 60 * 24}` })
+                setCookie("authenticated", true, { path: '/', maxAge: `${60 * 60 * 24}` })
+                sessionStorage.setItem("accessToken", response.access)
+                sessionStorage.setItem("authenticated", "true");
+                router.push('/');
             })
             .catch(err => console.error(err));
     }
@@ -46,14 +42,13 @@ export default function Login() {
         },
 
         onSubmit: (value) => {
-            setLoading(true)
+            console.log(value);
             fetchAuthToken(value);
-            setLoading(false)
         }
     })
 
     useEffect(() => {
-        sessionStorage.getItem("authenticated") === "true" ? router.back() : null;
+        sessionStorage.getItem("authenticated") === "false" || !sessionStorage.getItem('authenticated') ? setLoading(false) : router.push('/');
     }, [])
 
     return (
@@ -63,7 +58,6 @@ export default function Login() {
                     MyInstitute - Login
                 </title>
             </Head>
-
             {
                 loading ? <Spinner /> : <section className="h-screen px-40">
                     <div className="px-6 h-full text-gray-800">

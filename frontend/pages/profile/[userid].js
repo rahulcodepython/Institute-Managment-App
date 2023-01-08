@@ -7,12 +7,13 @@ import { useRouter } from 'next/router';
 export default function ProfileCard() {
 
     const router = useRouter();
+
     const { userid, position } = router.query
 
     const [profile, setProfile] = useState([])
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
+    const fetchUserData = () => {
         const options = {
             method: 'GET',
             headers: {
@@ -74,6 +75,10 @@ export default function ProfileCard() {
                 setLoading(false)
             })
             .catch(err => console.error(err));
+    }
+
+    useEffect(() => {
+        sessionStorage.getItem('authenticated') === 'true' ? fetchUserData() : router.push('/login')
     }, [])
 
     const showStars = (star) => {

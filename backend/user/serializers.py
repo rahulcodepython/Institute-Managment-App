@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from user.models import Teacher, Student, CustomUser, Staff, WaitingApproval
-from django.contrib.auth.hashers import make_password
 
 # Profile Button Serializer for Teacher, Student, Staff
 class ProfileButtonTeacherSerializer(serializers.ModelSerializer):
@@ -18,10 +17,10 @@ class ProfileButtonTeacherSerializer(serializers.ModelSerializer):
         return CustomUser.objects.get(email=obj.teacherUser).position
 
     def get_name(self, obj):
-        return Teacher.objects.get(teacherId=obj.teacherId).teacherName
+        return Teacher.objects.get(teacherUser=obj.teacherUser).teacherName
 
     def get_image(self, obj):
-        return Teacher.objects.get(teacherId=obj.teacherId).teacherImage.url
+        return Teacher.objects.get(teacherUser=obj.teacherUser).teacherImage.url
 
 class ProfileButtonStudentSerializer(serializers.ModelSerializer):
 

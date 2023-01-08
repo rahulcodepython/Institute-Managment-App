@@ -22,7 +22,6 @@ export default function index() {
         fetch(apiURL, options)
             .then(response => response.json())
             .then(response => {
-                console.log(response);
                 if (response.msg === 'Not Approved') {
                     setApprovalStatus(1)
                 }
