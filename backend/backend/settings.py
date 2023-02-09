@@ -1,4 +1,5 @@
 from pathlib import Path
+from pathlib import Path
 import environ
 from datetime import timedelta
 import os
@@ -6,8 +7,10 @@ import os
 env = environ.Env()
 environ.Env.read_env()
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -20,6 +23,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+
+# Application definition
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,17 +35,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Installed Apps
-    'user',
-    'base',
+    'authentication',
 
     # Used Dependencies
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_cleanup.apps.CleanupConfig',
     'corsheaders',
 ]
 
 # Change the default user model
-AUTH_USER_MODEL = 'user.CustomUser'
+AUTH_USER_MODEL = 'authentication.CustomUser'
 
 # Change the default Rest_Framework classes
 REST_FRAMEWORK = {

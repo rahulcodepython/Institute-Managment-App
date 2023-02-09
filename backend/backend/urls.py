@@ -3,14 +3,18 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import settings
 from django.conf.urls.static import static
-from user.views import (
-    ProfileButtonView, 
-    ShowTeachersView, 
-    ShowStudentsView, 
-    RegisterUserToCustomUserModelView,
-    ShowProfilePrivateView,
-    WaitForApprovalRegisterUserToCustomUserModelView,
-    CheckWaitForApprovalRegisterUserToCustomUserModelView
+from authentication.views import (
+    RegisterView,
+    AddUserView,
+    DeleteUnapprovedUserView,
+    LoginView,
+    DeleteUserView,
+    ShowSelfView,
+    ShowAllTeachersView,
+    ShowAllStaffsView,
+    ShowAllStudentsView,
+    SelfUpdateView,
+    UpdatePasswordView
 )
 
 urlpatterns = [
@@ -21,13 +25,19 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # Api routes
-    path('api/waituser/', WaitForApprovalRegisterUserToCustomUserModelView.as_view()),
-    path('api/checkwaituser/<str:id>', CheckWaitForApprovalRegisterUserToCustomUserModelView.as_view()),
-    path('api/registeruser/', RegisterUserToCustomUserModelView.as_view()),
-    path('api/profilebutton/', ProfileButtonView.as_view()),
-    path('api/showteachers/', ShowTeachersView.as_view()),
-    path('api/showstudents/', ShowStudentsView.as_view()),
-    path('api/myprofile/<str:id>/', ShowProfilePrivateView.as_view()),
+    path('register/', RegisterView.as_view()),
+    path('adduser/', AddUserView.as_view()),
+    path('deleteunapproveduser/', DeleteUnapprovedUserView.as_view()),
+    path('login/', LoginView.as_view()),
+
+    path('selfupdate/', SelfUpdateView.as_view()),
+    path('updatepass/', UpdatePasswordView.as_view()),
+    path('deleteuser/', DeleteUserView.as_view()),
+
+    path('showuser/', ShowSelfView.as_view()),
+    path('adminteacher/', ShowAllTeachersView.as_view()),
+    path('adminstudent/', ShowAllStudentsView.as_view()),
+    path('adminstaff/', ShowAllStaffsView.as_view()),
 ]
 
 if settings.DEBUG:
