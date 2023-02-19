@@ -2,202 +2,182 @@ from rest_framework.views import APIView, Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
-from .models import UnapprovedUser, CustomUser, Staff, Student, Teacher
-from .serializers import TeacherSerializer, StaffSerializer, StudentSerializer, UnapprovedUserSerializer, CustomUserSerializer
+from authentication.models import CustomUser
+from authentication.serializers import CustomUserSerializer, StaffSerializer, TeacherSerializer, StudentSerializer
+from base.models import Log
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
 
     return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        'refresh': f'{refresh}',
+        'access': f'{refresh.access_token}',
     }
 
 class RegisterView(APIView):
+
     def post(self, request, format=None):
-        if UnapprovedUser.objects.filter(email=request.data['email']).exists() or CustomUser.objects.filter(email=request.data['email']).exists():
-            return Response({"error": "You exists already."})
-        else:
-            serialized = UnapprovedUserSerializer(data=request.data)
+        try:
+            if 'email' in request.data and CustomUser.objects.filter(email=request.data['email']).exists():
+                return Response({"error": "This user already exists."})
 
-            if serialized.is_valid():
-                serialized.save()
-                return Response({"msg": "You have registered. Please wait for furthur action from admin."})
+            serialized_user = CustomUserSerializer(data=request.data)
 
-            else:
-                return Response({"error": "There is some issue. Please try again."})
+            if not serialized_user.is_valid():
+                return Response({"error": "Given data is not valid." })
+
+            if request.data['position'] == 'Teacher':
+                if 'domain' not in request.data or 'subdomain' not in request.data:
+                    return Response({"error": "Required data is not fulfiled. Please try again." })
+
+                serialized = TeacherSerializer(data=request.data)
+
+            elif request.data['position'] == 'Staff':
+                if 'dept' not in request.data:
+                    return Response({"error": "Required data is not fulfiled. Please try again." })
+
+                serialized = StaffSerializer(data=request.data)
+                
+            elif request.data['position'] == 'Student':
+                if 'standard' not in request.data or 'domain' not in request.data:
+                    return Response({"error": "Required data is not fulfiled. Please try again."})
+
+                serialized = StudentSerializer(data=request.data)   
+
+            if not serialized.is_valid():
+                return Response({"error": "Given data is not valid."})
+
+            serialized_user.save()
+            serialized.save(user=CustomUser.objects.get(email=request.data['email']))  
+
+            Log(log=f"{request.data['email']} is created.").save()
+
+            return Response({"msg": "New user is created."})
+
+        except Exception as e:
+            return Response(e)
+
+class LoginView(APIView):
+
+    def post(self, request, format=None):
+        try:
+            if "email" not in request.data or "password" not in request.data:
+                return Response({"error": "Required data is not fulfiled. Please try again."})
+                
+            user = authenticate(email=request.data['email'], password=request.data['password'])
+            
+            if user is None:
+                return Response({"error": "No such user exists."})
+
+            return Response({
+                'token': get_tokens_for_user(user),
+                'user': {
+                    'name': user.name,
+                    'email': user.email,
+                    'image': user.image.url
+                }
+            })
+    
+        except Exception as e:
+            return Response(e)
 
 class AddUserView(APIView):
 
     def post(self, request, formate=None):
-        if request.user.is_superuser:
-            email = request.data['email']
-            if UnapprovedUser.objects.filter(email=email).exists():
-                user = UnapprovedUser.objects.get(email=email)
-                newUser = CustomUser(email=user.email, name=user.name, password=user.password, position=user.position)
-                newUser.save()
-                user.delete()
+        try:
+            if not request.user.is_superuser:
+                return Response({"error": "You are not admin to process it."})
 
-                if user.position == 'Staff' or user.position == 'Admin':
-                    Staff(staffUser=newUser).save()
-                elif user.position == 'Teacher':
-                    Teacher(teacherUser=newUser).save()
-                elif user.position == 'Student':
-                    Student(studentUser=newUser).save()
+            if "email" not in request.data:
+                return Response({"error": "Required data is not fulfiled. Please try again."})
+                
+            if not CustomUser.objects.filter(email=request.data['email']).exists():
+                return Response({"error": "No such user exists."})
+                
+            if CustomUser.objects.get(email=request.data['email']).is_active:
+                return Response({"error": "The user is already approved."})
 
-                return Response({"msg": "New user is created."})
-            else:
-                return Response({"error": "There exists no such user."})
-        else:
-            return Response({"error": "You are not admin."})
-
-class DeleteUnapprovedUserView(APIView):
-
-    def delete(self, request, format=None):
-        if request.user.is_superuser:
-            if UnapprovedUser.objects.filter(email=request.data['email']).exists():
-                UnapprovedUser.objects.get(email=request.data['email']).delete()
-                return Response({"msg": "The user is deleted."})
-            else:
-                return Response({"error": "This user does not exists."})
-        else:
-            return Response({"error": "You are not admin."})
-
-class LoginView(APIView):
-    def post(self, request, format=None):
-        user = authenticate(email=request.data['email'], password=request.data['password'])
-        
-        if user is not None:
-            token = get_tokens_for_user(user)
-            if user.position == 'Teacher':
-                image = Teacher.objects.get(teacherUser=user).teacherImage
-            elif user.position == 'Student':
-                image = Student.objects.get(studentUser=user).studentImage
-            elif user.position == 'Staff' or user.position == 'Admin':
-                image = Staff.objects.get(staffUser=user).staffImage
-
-            return Response({
-                'token' : token,
-                'user': {
-                    'name': user.name,
-                    'email': user.email,
-                    'image': image.url,
-                    'position': user.position
-                }
-            })
-        else:
-            return Response({"error": "User is none"})
-
-class DeleteUserView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, format=None):
-        if request.user.position == 'Admin':
             user = CustomUser.objects.get(email=request.data['email'])
-        
-        else:
-            user = CustomUser.objects.get(email=request.user)
+            user.is_active = True
+            user.save()
+            
+            Log(log=f"{request.user} has approved {user.email} user").save()
 
-        user.delete()
-        return Response({"msg": "The user is deleted."})
+            return Response({"msg": "New user is registerd."})
 
-class ShowSelfView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, format=None):
-        if request.user.position == 'Admin':
-            user = CustomUser.objects.get(email=request.data['email'])
-        
-        else:
-            user = CustomUser.objects.get(email=request.user.email)
-
-        if user.position == 'Teacher':
-            teacher = Teacher.objects.get(teacherUser=user)
-            serialized_data = TeacherSerializer(teacher)
-
-        elif user.position == 'Student':
-            student = Student.objects.get(studentUser=user)
-            serialized_data = StudentSerializer(student)
-
-        elif user.position == 'Staff' or user.position == 'Admin':
-            staff = Staff.objects.get(staffUser=user)
-            serialized_data = StaffSerializer(staff)
-        
-        return Response({
-            'data': serialized_data.data,
-            'user' : {
-                'name': user.name,
-                'email': user.email,
-                'joiningDate': user.joiningDate
-            }
-            })
-
-class ShowAllTeachersView(APIView):
-
-    def get(self, request, format=None):
-        if request.user.is_superuser:
-            return Response(TeacherSerializer(Teacher.objects.all(), many=True).data)
-        else:
-            return Response({"error": "You are not admin."})
-
-class ShowAllStudentsView(APIView):
-
-    def get(self, request, format=None):
-        if request.user.is_superuser:
-            return Response(StudentSerializer(Student.objects.all(), many=True).data)
-        else:
-            return Response({"error": "You are not admin."})
-
-class ShowAllStaffsView(APIView):
-
-    def get(self, request, format=None):
-        if request.user.is_superuser:
-            return Response(StaffSerializer(Staff.objects.all(), many=True).data)
-        else:
-            return Response({"error": "You are not admin."})
+        except Exception as e:
+            return Response(e)
 
 class SelfUpdateView(APIView):
 
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, format=None):
-        user = CustomUser.objects.get(email=request.user.email)
+        try:
+            if 'position' in request.data or 'password' in request.data:
+                return Response({"error": "You can not update your position and password from here."})
 
-        if user.position == 'Teacher':
-            teacher = Teacher.objects.get(teacherUser=user)
-            serializer = TeacherSerializer(teacher, data=request.data, partial=True)
+            user = CustomUser.objects.get(email=request.user.email)
 
-        elif user.position == 'Student':
-            student = Student.objects.get(studentUser=request.user)
-            serializer = StudentSerializer(student, data=request.data, partial=True)
+            serializer = CustomUserSerializer(user, data=request.data, partial=True)
 
-        elif user.position == 'Staff' or user.position == 'Admin':
-            staff = Staff.objects.get(staffUser=request.user)
-            serializer = StaffSerializer(staff, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
 
-        if serializer.is_valid():
-            serializer.save()
+                Log(log=f"{request.user.email} has updated own profile").save()
+
+                return Response({"msg": "Your data is updated."})
             
-            return Response({"msg": "Your data is updated."})
-        
-        else:
-            return Response({"error": "There is some issue."})
+            return Response({"error": "There is some issue. Please try again."})
+            
+        except Exception as e:
+            return Response(e)
 
 class UpdatePasswordView(APIView):
+
     permission_classes = [IsAuthenticated]
 
-    def patch(seld, request, format=None):
-        user = CustomUser.objects.get(email=request.user.email)
+    def post(seld, request, format=None):
+        try:
+            user = CustomUser.objects.get(email=request.user.email)
 
-        serialized = CustomUserSerializer(user, data=request.data, partial=True)
+            if 'password' not in request.data:
+                return Response({'error': "Password is not provided"})
 
-        if serialized.is_valid():
-            serialized.save()
+            serialized = CustomUserSerializer(user, data=request.data, partial=True)
 
-            return Response({"msg": "Your password is updated."})
-    
-        return Response({"error": "There is some issue."})
+            if serialized.is_valid():
+                serialized.save()
 
+                Log(f"{request.user.email} has updated own password").save()
+
+                return Response({"msg": "Your password is updated."})
         
+            return Response({"error": "There is some issue. Please try again."})
 
+        except Exception as e:
+            return Response(e)
+
+class DeleteUserView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, format=None):
+        try:
+            if not request.user.is_superuser:
+                return Response({"msg": "You are not admin to process it."})
+                
+            if 'email' not in request.data:
+                return Response({"error": "Required data is not fulfiled. Please try again."})
+
+            if not CustomUser.objects.filter(email=request.data['email']).exists():
+                return Response({"error": "No such user exists."})
+            
+            CustomUser.objects.get(email=request.data['email']).delete()
+            
+            Log(log=f"{request.user.email} has deleted {request.data['email']} user.").save()
+
+            return Response({"msg": "The user is deleted."})
+                
+        except Exception as e:
+            return Response(e)

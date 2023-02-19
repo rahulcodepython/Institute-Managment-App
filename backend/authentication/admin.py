@@ -1,5 +1,6 @@
 from django.contrib import admin
-from authentication.models import CustomUser, Teacher, Student, Staff, UnapprovedUser
+# from authentication.models import CustomUser
+from authentication.models import CustomUser, Teacher, Student, Staff
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
@@ -7,17 +8,13 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ['teacherUser', 'teacherSubject']
+    list_display = ['user', 'domain', 'subdomain']
 
 @admin.register(Student)
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ['studentUser', 'studentClass']
+    list_display = ['user', 'standard', 'domain']
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ['staffUser', 'staffDepartment']
-
-@admin.register(UnapprovedUser)
-class UnapprovedUserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'position', 'name']
+    list_display = ['user', 'dept']
 

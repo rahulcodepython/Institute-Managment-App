@@ -1,6 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
-from django.contrib.auth.hashers import make_password
+from base.models import Standard, Domain, Subdomain, Department
+
+GENDER = [
+    ('M', 'Male'),
+    ('F', 'Female'),
+    ('O', 'Others')
+]
+POSITION = [
+    ('Staff', 'Staff'),
+    ('Teacher', 'Teacher'),
+    ('Student', 'Student')
+]
 
 # Custom Base User
 class CustomUserManager(BaseUserManager):
@@ -34,12 +45,18 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
 
-    name = models.CharField(max_length=255, default="")
     email = models.EmailField(db_index=True, unique=True, max_length=254)
-    position = models.CharField(max_length=100, default="Staff")
     joiningDate = models.DateField(auto_now_add=True)
-    is_staff = models.BooleanField(default=True)
-    is_active = models.BooleanField(default=True)
+
+    name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='userimage/', default="default.png")
+    aboutme = models.TextField()
+    gender = models.CharField(max_length=1, choices=GENDER)
+    mobile = models.CharField(max_length=100)
+    position = models.CharField(max_length=100, choices=POSITION)
+
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
     objects = CustomUserManager()
@@ -50,65 +67,42 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'CustomUser'
         verbose_name_plural = 'CustomUsers'
 
-# Teacher Model
-class Teacher(models.Model):
+# Base Employee
+class Employee(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    salary = models.IntegerField(default=0)
+    is_paid = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
 
-    teacherUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    teacherSubject = models.CharField(max_length=100, default="", blank=True)
-    teacherImage = models.ImageField(upload_to='teacherimage/', default="default.png")
-    teacherLastUpdateDate = models.DateField(auto_now=True)
-    teacherPayScale = models.IntegerField(default=0)
-    teacherBio = models.TextField(default="Bio")
-    teacherGender = models.CharField(max_length=1, default="")
-    teacherMobileNumber = models.CharField(max_length=100, default="", blank=True)
+    class Meta:
+        managed = False
+
+# Teacher Model
+class Teacher(Employee):
+    domain = models.ForeignKey(Domain, on_delete=models.SET_NULL, null=True)
+    subdomain = models.ForeignKey(Subdomain, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         verbose_name = 'Teacher'
         verbose_name_plural = 'Teachers'
 
-# Student Model
-class Student(models.Model):
-
-    studentUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    studentClass = models.CharField(max_length=100, default="", blank=True)
-    studentSubject = models.CharField(max_length=100, default="", blank=True)
-    studentImage = models.ImageField(upload_to='studentimage/', default="default.png")
-    studentLastUpdateDate = models.DateField(auto_now=True)
-    studentBio = models.TextField(default="Bio")
-    studentGender = models.CharField(max_length=1, default="", blank=True)
-    studentMobileNumber = models.CharField(max_length=100, default="", blank=True)
-    studentMarks = models.IntegerField(default=0)
-
-    class Meta:
-        verbose_name = 'Student'
-        verbose_name_plural = 'Students'
-
 # Staff Model
-class Staff(models.Model):
-
-    staffUser = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    staffDepartment = models.CharField(max_length=100, default="", blank=True)
-    staffPayScale = models.IntegerField(default=0)
-    staffImage = models.ImageField(upload_to='staffimage/', default="default.png")
-    staffLastUpdateDate = models.DateField(auto_now=True)
-    staffBio = models.TextField(default="Bio")
-    staffGender = models.CharField(max_length=1, default="", blank=True)
-    staffMobileNumber = models.CharField(max_length=100, default="", blank=True)
+class Staff(Employee):
+    dept = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         verbose_name = 'Staff'
         verbose_name_plural = 'Staffs'
 
-# Unapproved User Model
-class UnapprovedUser(models.Model):
+# Student Model
+class Student(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    standard = models.ForeignKey(Standard, on_delete=models.SET_NULL, null=True, blank=True)
+    domain = models.ForeignKey(Domain, on_delete=models.SET_NULL, null=True, blank=True)
+    subdomain = models.ManyToManyField(Subdomain, blank=True)
+    is_session_active = models.BooleanField(default=False)
+    is_fees_clear = models.BooleanField(default=False)
 
-    email = models.EmailField(unique=True, max_length=254)
-    name = models.CharField(max_length=254)
-    password = models.CharField(max_length=255)
-    position = models.CharField(max_length=100, default="Staff")
-    joiningDate = models.DateField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        self.password = make_password(self.password)
-        return super().save(*args, **kwargs)
-
+    class Meta:
+        verbose_name = 'Student'
+        verbose_name_plural = 'Students'

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
     # Installed Apps
     'authentication',
+    'base',
 
     # Used Dependencies
     'rest_framework',
