@@ -4,7 +4,7 @@ from authentication.models import CustomUser, Teacher, Student, Staff
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'name', 'position']
+    list_display = ['email', 'name', 'position', 'is_active']
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):

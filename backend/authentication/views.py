@@ -2,7 +2,7 @@ from rest_framework.views import APIView, Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
-from authentication.models import CustomUser
+from authentication.models import CustomUser, Staff, Teacher, Student
 from authentication.serializers import CustomUserSerializer, StaffSerializer, TeacherSerializer, StudentSerializer
 from base.models import Log
 
@@ -20,7 +20,7 @@ class RegisterView(APIView):
         try:
             if 'email' in request.data and CustomUser.objects.filter(email=request.data['email']).exists():
                 return Response({"error": "This user already exists."})
-
+                
             serialized_user = CustomUserSerializer(data=request.data)
 
             if not serialized_user.is_valid():
@@ -50,7 +50,7 @@ class RegisterView(APIView):
             serialized_user.save()
             serialized.save(user=CustomUser.objects.get(email=request.data['email']))  
 
-            Log(log=f"{request.data['email']} is created.").save()
+            Log.objects.create(log=f"{request.data['email']} is created.")
 
             return Response({"msg": "New user is created."})
 
@@ -120,7 +120,7 @@ class SelfUpdateView(APIView):
             user = CustomUser.objects.get(email=request.user.email)
 
             serializer = CustomUserSerializer(user, data=request.data, partial=True)
-
+    
             if serializer.is_valid():
                 serializer.save()
 
@@ -137,7 +137,7 @@ class UpdatePasswordView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(seld, request, format=None):
+    def post(self, request, format=None):
         try:
             user = CustomUser.objects.get(email=request.user.email)
 
@@ -149,7 +149,7 @@ class UpdatePasswordView(APIView):
             if serialized.is_valid():
                 serialized.save()
 
-                Log(f"{request.user.email} has updated own password").save()
+                Log(log=f"{request.user.email} has updated own password").save()
 
                 return Response({"msg": "Your password is updated."})
         
@@ -179,5 +179,54 @@ class DeleteUserView(APIView):
 
             return Response({"msg": "The user is deleted."})
                 
+        except Exception as e:
+            return Response(e)
+
+class ShowSelfView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        try:
+            if request.user.position == 'Staff':
+                serialized = StaffSerializer(Staff.objects.get(user=request.user)).data
+
+            elif request.user.position == 'Teacher':
+                serialized = TeacherSerializer(Teacher.objects.get(user=request.user)).data
+
+            elif request.user.position == 'Student':
+                serialized = StudentSerializer(Student.objects.get(user=request.user)).data
+
+            return Response({
+                "base": CustomUserSerializer(CustomUser.objects.get(email=request.user.email)).data,
+                "user": serialized
+            })
+
+        except Exception as e:
+            return Response(e)
+
+    def post(self, request, format=None):
+        try:
+            if not request.user.is_superuser:
+                return Response({"error": "You are not admin to process it."})
+            
+            if 'email' not in request.data or not CustomUser.objects.filter(email=request.data['email']).exists():
+                return Response({"error": "No such user is found."})
+
+            user = CustomUser.objects.get(email=request.data['email'])
+
+            if request.user.position == 'Staff':
+                serialized = StaffSerializer(Staff.objects.get(user=user)).data
+
+            elif request.user.position == 'Teacher':
+                serialized = TeacherSerializer(Teacher.objects.get(user=user)).data
+
+            elif request.user.position == 'Student':
+                serialized = StudentSerializer(Student.objects.get(user=user)).data
+
+            return Response({
+                "base": CustomUserSerializer(user).data,
+                "user": serialized
+            })
+
         except Exception as e:
             return Response(e)

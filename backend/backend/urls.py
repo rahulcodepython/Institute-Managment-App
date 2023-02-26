@@ -10,14 +10,14 @@ from authentication.views import (
     SelfUpdateView,
     UpdatePasswordView,
     DeleteUserView,
+    ShowSelfView,
 )
-# from base.views import (
-#     ShowSelfView,
-#     ShowAllTeachersView,
-#     ShowAllStaffsView,
-#     ShowAllStudentsView,
-#     ShowAllUnapprovedUser
-# )
+from staff.views import (
+    ShowTeachersView,
+    ShowStaffsView,
+    ShowStudentsView,
+    ShowInactiveUsersView
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,13 +34,13 @@ urlpatterns = [
     path('selfupdate/', SelfUpdateView.as_view()),
     path('updatepass/', UpdatePasswordView.as_view()),
     path('deleteuser/', DeleteUserView.as_view()),
+    path('showuser/', ShowSelfView.as_view()),
 
-#     # Base App routes
-#     path('showuser/', ShowSelfView.as_view()),
-#     path('adminteacher/', ShowAllTeachersView.as_view()),
-#     path('adminstudent/', ShowAllStudentsView.as_view()),
-#     path('adminstaff/', ShowAllStaffsView.as_view()),
-#     path('adminunapproveduser/', ShowAllUnapprovedUser.as_view())
+#     # Admin App routes
+    path('teachers/', ShowTeachersView.as_view()),
+    path('staffs/', ShowStaffsView.as_view()),
+    path('students/', ShowStudentsView.as_view()),
+    path('inactives/', ShowInactiveUsersView.as_view())
 ]
 
 if settings.DEBUG:
